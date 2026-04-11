@@ -17,8 +17,8 @@ SESSION_CHAT_ROWS_KEY = "fincent_ui_chat_rows"
 
 def configure_page() -> None:
     st.set_page_config(page_title="Fincent", page_icon="🏦", layout="centered")
-    st.title("Fincent - Your Friendly Neighborhood Financial Assistant")
-    st.caption("Self-help Finance for Fun but Not Profit.")
+    st.title("Fincent")
+    st.caption("Self-help Finance for Fun")
 
 
 def render_sidebar(settings: AppSettings) -> tuple[str, str]:
