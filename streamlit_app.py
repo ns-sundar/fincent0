@@ -12,12 +12,12 @@ from graph.workflow import build_compiled_graph
 from state.adapters import chat_rows_to_messages, messages_to_chat_rows
 from state.schema import UiChatRow
 
-SESSION_CHAT_ROWS_KEY = "finnie_ui_chat_rows"
+SESSION_CHAT_ROWS_KEY = "fincent_ui_chat_rows"
 
 
 def configure_page() -> None:
-    st.set_page_config(page_title="Finnie0", page_icon="🏦", layout="centered")
-    st.title("Finnie0 — hub-and-spoke agents")
+    st.set_page_config(page_title="Fincent", page_icon="🏦", layout="centered")
+    st.title("Fincent — hub-and-spoke agents")
     st.caption(
         "Central hub routes requests: generic finance Q&A goes to the documents Q&A spoke; "
         "other requests are declined. Memory is multi-turn within this browser session."

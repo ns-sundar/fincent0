@@ -1,6 +1,6 @@
-# Finnie0
+# Fincent
 
-Finnie0 is a **framework-style** multi-agent financial assistant: a **hub-and-spoke** LangGraph workflow with a **Streamlit** UI and **OpenAI** models (default **`gpt-4o-mini`**). The codebase is split into small modules with **type hints** and clear function boundaries.
+Fincent is a **framework-style** multi-agent financial assistant: a **hub-and-spoke** LangGraph workflow with a **Streamlit** UI and **OpenAI** models (default **`gpt-4o-mini`**). The codebase is split into small modules with **type hints** and clear function boundaries.
 
 ## What it does
 
@@ -36,7 +36,7 @@ flowchart LR
 | `graph/workflow.py` | Builds and compiles the hub-and-spoke graph |
 | `agents/hub/` | Routing (`planner`, `nodes`), decline copy (`decline`, `prompts`) |
 | `agents/qa/` | Q&A spoke prompts and LangGraph node factory |
-| `state/` | `FinnieState` (messages + route), UI ↔ LangChain message adapters |
+| `state/` | `FincentState` (messages + route), UI ↔ LangChain message adapters |
 | `config/` | `AppSettings`, env-backed defaults, `make_chat_model()` |
 | `requirements.txt` | Python dependencies |
 
@@ -45,7 +45,7 @@ flowchart LR
 Use Python 3.11+ (3.12 recommended). From this directory:
 
 ```bash
-cd finnie0
+cd fincent
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 python -m pip install -r requirements.txt
@@ -63,10 +63,10 @@ Dependencies include `streamlit`, `langgraph`, `langchain-openai`, `langchain-co
 
    Or paste the key in the app sidebar (stored only for that browser session).
 
-2. Run the app **from the `finnie0` directory** so package imports (`config`, `agents`, `graph`, `state`) resolve:
+2. Run the app **from the `fincent` directory** so package imports (`config`, `agents`, `graph`, `state`) resolve:
 
    ```bash
-   cd finnie0
+   cd fincent
    streamlit run streamlit_app.py
    ```
 
@@ -79,22 +79,22 @@ Dependencies include `streamlit`, `langgraph`, `langchain-openai`, `langchain-co
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `OPENAI_MODEL` | `gpt-4o-mini` | Chat model for hub and Q&A spoke |
-| `FINNIE_ROUTER_TEMPERATURE` | `0` | Sampling temperature for the router LLM |
-| `FINNIE_QA_TEMPERATURE` | `0.2` | Sampling temperature for the Q&A spoke |
+| `FINCENT_ROUTER_TEMPERATURE` | `0` | Sampling temperature for the router LLM |
+| `FINCENT_QA_TEMPERATURE` | `0.2` | Sampling temperature for the Q&A spoke |
 
 Example:
 
 ```bash
 export OPENAI_API_KEY="sk-..."
 export OPENAI_MODEL="gpt-4o-mini"
-export FINNIE_QA_TEMPERATURE="0.2"
+export FINCENT_QA_TEMPERATURE="0.2"
 streamlit run streamlit_app.py
 ```
 
 ## Design notes
 
 - **Hub-and-spoke orchestration** is implemented as explicit graph nodes and conditional edges in `graph/workflow.py`, not as ad-hoc `if` chains in the UI.
-- **Typing**: shared state uses `FinnieState` (extends LangGraph `MessagesState` with a `route` field); Pydantic models support structured routing decisions in `agents/hub/planner.py`.
+- **Typing**: shared state uses `FincentState` (extends LangGraph `MessagesState` with a `route` field); Pydantic models support structured routing decisions in `agents/hub/planner.py`.
 - **Extending**: add a new folder under `agents/` for another spoke, register a node in `graph/workflow.py`, and extend the router schema/prompt in `agents/hub/` so the hub can branch to the new path.
 
 ## Limitations (by design)

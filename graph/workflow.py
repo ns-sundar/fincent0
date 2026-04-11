@@ -8,7 +8,7 @@ from agents.hub.nodes import make_route_intent_node, route_from_state
 from agents.qa.nodes import make_qa_financial_docs_node
 from config.llm import make_chat_model
 from config.settings import AppSettings
-from state.schema import FinnieState
+from state.schema import FincentState
 
 
 def build_compiled_graph(
@@ -16,7 +16,7 @@ def build_compiled_graph(
     settings: AppSettings,
     *,
     model_name: str,
-) -> CompiledStateGraph[FinnieState, None, FinnieState, FinnieState]:
+) -> CompiledStateGraph[FincentState, None, FincentState, FincentState]:
     """
     Hub-and-spoke graph:
 
@@ -33,7 +33,7 @@ def build_compiled_graph(
         temperature=settings.qa_temperature,
     )
 
-    workflow = StateGraph(FinnieState)
+    workflow = StateGraph(FincentState)
     workflow.add_node("hub_route", make_route_intent_node(router_llm))
     workflow.add_node("qa_financial_docs", make_qa_financial_docs_node(qa_llm))
     workflow.add_node("hub_decline", decline_node)

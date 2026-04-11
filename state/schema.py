@@ -7,7 +7,7 @@ from langgraph.graph import MessagesState
 RouteName = Literal["qa", "decline"]
 
 
-class FinnieState(MessagesState):
+class FincentState(MessagesState):
     """
     Hub-and-spoke orchestration state.
 
