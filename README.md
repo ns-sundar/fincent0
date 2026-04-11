@@ -1,10 +1,36 @@
 # Fincent
 
-Fincent is a **framework-style** multi-agent financial assistant: a **hub-and-spoke** LangGraph workflow with a **Streamlit** UI and **OpenAI** models (default **`gpt-4o-mini`**). The codebase is split into small modules with **type hints** and clear function boundaries.
+Fincent is a **framework-style** multi-agent financial assistant. It aims to answer general finance questions (with the Q&A Agent), questions about a specific portfolio (with the Portfolio Agent), offer answers and insights about stock market trends (with the Market Agent), and help with planning for financial goals (with the Goal Agent). 
 
-## What it does
+## Architecture
 
-- **Central hub (router / planner)** reads the conversation and classifies intent. It either:
+```text
+                              ┌────────────────────────────────┐
+                              │          Frontend UI           │
+                              │      (React / Streamlit)       │
+                              └────────────────┬───────────────┘
+                                               │
+                              ┌────────────────▼───────────────┐
+                              │      Orchestrator Agent        │
+                              │      (Router + Planner)        │
+                              └────────────────┬───────────────┘
+        ┌──────────────────────┬────────────────┴────────────────┬──────────────────────┐
+        ▼                      ▼                                 ▼                      ▼
+ ┌──────────────┐       ┌──────────────┐                 ┌──────────────┐       ┌──────────────┐
+ │   Q&A Agent  │       │  Portfolio   │                 │    Market    │       │     Goal     │
+ │              │       │    Agent     │                 │    Agent     │       │   Planner    │
+ └──────┬───────┘       └──────┬───────┘                 └──────┬───────┘       └──────┬───────┘
+        │                      │                                │                      │
+ ┌──────▼───────┐       ┌──────▼───────┐                 ┌──────▼───────┐       ┌──────▼───────┐
+ │  RAG System  │       │  Portfolio   │                 │    Market    │       │   Planning   │
+ │ (vector DB + │       │    store     │                 │  data APIs   │       │    layer     │
+ │  embeddings) │       │ (holdings)   │                 │ (yFinance…)  │       │              │
+ └──────────────┘       └──────────────┘                 └──────────────┘       └──────────────┘
+```
+
+## How it does it
+
+- ** Orchestrator Agent (router / planner)** reads the conversation and classifies intent. It either:
   - routes to the **Q&A spoke** for **generic educational** questions about finance, markets, regulations, and financial documents (answered from **pretrained knowledge only**), or
   - **declines** requests that imply live market data, personal portfolio guidance, trading or security-specific advice, or individualized financial / tax / legal planning (when in doubt, it declines).
 - **Financial documents Q&A agent** is the only spoke today: it answers **without RAG** (no document retrieval) using general knowledge and a dedicated system prompt.
