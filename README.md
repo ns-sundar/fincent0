@@ -33,7 +33,7 @@ Fincent is a **framework-style** multi-agent financial assistant. It aims to ans
 - ** Orchestrator Agent (router / planner)** reads the conversation and classifies intent. It either:
   - routes to the **Q&A spoke** for **generic educational** questions about finance, markets, regulations, and financial documents (answered from **pretrained knowledge only**), or
   - **declines** requests that imply live market data, personal portfolio guidance, trading or security-specific advice, or individualized financial / tax / legal planning (when in doubt, it declines).
-- **Financial documents Q&A agent** is the only spoke today: it answers **without RAG** (no document retrieval) using general knowledge and a dedicated system prompt.
+- **Financial documents Q&A agent** is the only spoke today: it uses **agentic RAG** over local docs in `data/`, chunked and indexed into a local **FAISS** vector store. Answers include source document citations.
 - **Multi-turn memory** is the chat transcript stored in **Streamlit session state**; each turn invokes the graph with the full message list so context is preserved for the hub and the Q&A agent.
 
 ```mermaid
@@ -61,9 +61,11 @@ flowchart LR
 | `streamlit_app.py` | UI: session transcript, cached compiled graph, one turn per user message |
 | `graph/workflow.py` | Builds and compiles the hub-and-spoke graph |
 | `agents/hub/` | Routing (`planner`, `nodes`), decline copy (`decline`, `prompts`) |
-| `agents/qa/` | Q&A spoke prompts and LangGraph node factory |
+| `agents/qa/` | Q&A spoke prompts, FAISS RAG ingestion/retrieval, and node factory |
 | `state/` | `FincentState` (messages + route), UI ↔ LangChain message adapters |
 | `config/` | `AppSettings`, env-backed defaults, `make_chat_model()` |
+| `data/qa_seed_docs/` | Curated seed corpus (10 docs) for future vector DB ingestion |
+| `data/vector_store/qa_faiss/` | Persisted FAISS index built from markdown docs under `data/` |
 | `requirements.txt` | Python dependencies |
 
 ## Install
@@ -107,6 +109,12 @@ Dependencies include `streamlit`, `langgraph`, `langchain-openai`, `langchain-co
 | `OPENAI_MODEL` | `gpt-4o-mini` | Chat model for hub and Q&A spoke |
 | `FINCENT_ROUTER_TEMPERATURE` | `0` | Sampling temperature for the router LLM |
 | `FINCENT_QA_TEMPERATURE` | `0.2` | Sampling temperature for the Q&A spoke |
+| `FINCENT_QA_DATA_DIR` | `./data` | Root folder scanned for markdown docs to ingest |
+| `FINCENT_QA_INDEX_DIR` | `./data/vector_store/qa_faiss` | Folder where FAISS index is stored |
+| `FINCENT_QA_CHUNK_SIZE` | `1800` | Chunk size for document ingestion |
+| `FINCENT_QA_CHUNK_OVERLAP` | `250` | Overlap between adjacent chunks |
+| `FINCENT_QA_TOP_K` | `4` | Number of retrieved chunks per query |
+| `FINCENT_QA_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model used for indexing/retrieval |
 
 Example:
 

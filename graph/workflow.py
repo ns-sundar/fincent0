@@ -35,7 +35,10 @@ def build_compiled_graph(
 
     workflow = StateGraph(FincentState)
     workflow.add_node("hub_route", make_route_intent_node(router_llm))
-    workflow.add_node("qa_financial_docs", make_qa_financial_docs_node(qa_llm))
+    workflow.add_node(
+        "qa_financial_docs",
+        make_qa_financial_docs_node(qa_llm, api_key=api_key, settings=settings),
+    )
     workflow.add_node("hub_decline", decline_node)
 
     workflow.add_edge(START, "hub_route")

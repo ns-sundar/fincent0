@@ -55,15 +55,9 @@ def ensure_chat_rows() -> list[UiChatRow]:
 def get_compiled_graph(
     api_key: str,
     model_name: str,
-    router_temperature: float,
-    qa_temperature: float,
+    settings: AppSettings,
 ) -> CompiledStateGraph:
-    """Compile once per (key, model, temps) tuple; safe for Streamlit reruns."""
-    settings = AppSettings(
-        default_chat_model=model_name,
-        router_temperature=router_temperature,
-        qa_temperature=qa_temperature,
-    )
+    """Compile once per (key, model, settings) tuple; safe for Streamlit reruns."""
     return build_compiled_graph(api_key, settings, model_name=model_name)
 
 
@@ -108,8 +102,7 @@ def handle_new_prompt(
     graph = get_compiled_graph(
         api_key,
         model_name,
-        settings.router_temperature,
-        settings.qa_temperature,
+        settings,
     )
 
     with st.chat_message("assistant"):
