@@ -17,11 +17,8 @@ SESSION_CHAT_ROWS_KEY = "fincent_ui_chat_rows"
 
 def configure_page() -> None:
     st.set_page_config(page_title="Fincent", page_icon="🏦", layout="centered")
-    st.title("Fincent — hub-and-spoke agents")
-    st.caption(
-        "Central hub routes requests: generic finance Q&A goes to the documents Q&A spoke; "
-        "other requests are declined. Memory is multi-turn within this browser session."
-    )
+    st.title("Fincent - Your Friendly Neighborhood Financial Assistant")
+    st.caption("Self-help Finance for Fun but Not Profit.")
 
 
 def render_sidebar(settings: AppSettings) -> tuple[str, str]:
