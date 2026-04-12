@@ -1,0 +1,26 @@
+# Git / IDE
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+.Python
+.venv
+venv
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Local / secrets (never bake keys into images)
+.env
+.env.*
+!.env.example
+
+# Optional: omit persisted FAISS from image; index is built on first use (needs OPENAI_API_KEY)
+data/vector_store
