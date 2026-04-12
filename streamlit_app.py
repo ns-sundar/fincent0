@@ -14,6 +14,13 @@ from state.schema import UiChatRow
 
 SESSION_CHAT_ROWS_KEY = "fincent_ui_chat_rows"
 
+# OpenAI Chat Completions model ids (see https://platform.openai.com/docs/models)
+CHAT_MODEL_OPTIONS: tuple[str, ...] = (
+    "gpt-5.4-nano",
+    "gpt-5.4-mini",
+    "gpt-4o-mini",
+)
+
 
 def configure_page() -> None:
     st.set_page_config(page_title="Fincent", page_icon="🏦", layout="centered")
@@ -21,28 +28,27 @@ def configure_page() -> None:
     st.caption("Self-help Finance for Fun")
 
 
-def render_sidebar(settings: AppSettings) -> tuple[str, str]:
-    """Collect secrets and model override. Returns `(api_key, model_name)`."""
+def render_sidebar(settings: AppSettings) -> str:
+    """Model choice for this session. API key comes from OPENAI_API_KEY (e.g. HF Secrets)."""
     with st.sidebar:
         st.header("Settings")
-        api_key = st.text_input(
-            "OpenAI API key",
-            type="password",
-            value=os.getenv("OPENAI_API_KEY", ""),
-            help="Not stored on disk; kept in this Streamlit session.",
-        ).strip()
-
-        model_name = st.text_input(
+        default_model = settings.default_chat_model
+        if default_model in CHAT_MODEL_OPTIONS:
+            default_index = CHAT_MODEL_OPTIONS.index(default_model)
+        else:
+            default_index = 0
+        model_name = st.selectbox(
             "Model",
-            value=settings.default_chat_model,
-            help="Default is gpt-4o-mini (overridable).",
-        ).strip() or settings.default_chat_model
+            options=list(CHAT_MODEL_OPTIONS),
+            index=default_index,
+            help="OpenAI chat model id for routing and Q&A.",
+        )
 
         if st.button("Clear conversation"):
             st.session_state.pop(SESSION_CHAT_ROWS_KEY, None)
             st.rerun()
 
-    return api_key, model_name
+    return model_name
 
 
 def ensure_chat_rows() -> list[UiChatRow]:
@@ -92,7 +98,8 @@ def handle_new_prompt(
 
     if not api_key:
         assistant_text = (
-            "Please set your OpenAI API key in the sidebar (or export OPENAI_API_KEY)."
+            "OpenAI API key is missing. Set the OPENAI_API_KEY secret (e.g. Hugging Face "
+            "Space **Settings → Variables and secrets**) or export it in your environment."
         )
         rows.append({"role": "assistant", "content": assistant_text})
         with st.chat_message("assistant"):
@@ -119,7 +126,8 @@ def handle_new_prompt(
 def main() -> None:
     configure_page()
     settings = load_app_settings()
-    api_key, model_name = render_sidebar(settings)
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    model_name = render_sidebar(settings)
     rows = ensure_chat_rows()
 
     render_chat_history(rows)
