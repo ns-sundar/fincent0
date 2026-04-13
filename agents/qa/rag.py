@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,10 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from config.runtime_logging import fincent_log
 from config.settings import AppSettings
+
+logger = logging.getLogger(__name__)
 
 
 def _split_frontmatter(raw_text: str) -> tuple[dict[str, Any], str]:
@@ -105,12 +109,27 @@ def build_or_load_vectorstore(api_key: str, settings: AppSettings) -> FAISS:
     )
 
     if _index_exists(index_dir):
+        fincent_log(
+            logger,
+            logging.INFO,
+            "rag.faiss.load",
+            component="rag",
+            index_dir=str(index_dir),
+        )
         return FAISS.load_local(
             str(index_dir),
             embeddings=embeddings,
             allow_dangerous_deserialization=True,
         )
 
+    fincent_log(
+        logger,
+        logging.INFO,
+        "rag.faiss.build.start",
+        component="rag",
+        data_dir=str(settings.qa_data_dir),
+        index_dir=str(index_dir),
+    )
     docs = load_markdown_documents(settings.qa_data_dir)
     if not docs:
         raise ValueError(f"No markdown docs found in {settings.qa_data_dir}")
@@ -120,8 +139,25 @@ def build_or_load_vectorstore(api_key: str, settings: AppSettings) -> FAISS:
         chunk_size=settings.qa_chunk_size,
         chunk_overlap=settings.qa_chunk_overlap,
     )
+    fincent_log(
+        logger,
+        logging.INFO,
+        "rag.faiss.build.chunked",
+        component="rag",
+        markdown_doc_count=len(docs),
+        chunk_count=len(chunks),
+        chunk_size=settings.qa_chunk_size,
+        chunk_overlap=settings.qa_chunk_overlap,
+    )
     vectorstore = FAISS.from_documents(chunks, embedding=embeddings)
     vectorstore.save_local(str(index_dir))
+    fincent_log(
+        logger,
+        logging.INFO,
+        "rag.faiss.build.saved",
+        component="rag",
+        index_dir=str(index_dir),
+    )
     return vectorstore
 
 

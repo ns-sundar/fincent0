@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -7,8 +9,11 @@ from agents.hub.decline import decline_node
 from agents.hub.nodes import make_route_intent_node, route_from_state
 from agents.qa.nodes import make_qa_financial_docs_node
 from config.llm import make_chat_model
+from config.runtime_logging import fincent_log
 from config.settings import AppSettings
 from state.schema import FincentState
+
+logger = logging.getLogger(__name__)
 
 
 def build_compiled_graph(
@@ -22,6 +27,15 @@ def build_compiled_graph(
 
     START → hub_route → (qa_financial_docs | hub_decline) → END
     """
+    fincent_log(
+        logger,
+        logging.INFO,
+        "workflow.build.start",
+        component="workflow",
+        chat_model=model_name,
+        router_temperature=settings.router_temperature,
+        qa_temperature=settings.qa_temperature,
+    )
     router_llm = make_chat_model(
         api_key,
         model=model_name,
@@ -53,4 +67,12 @@ def build_compiled_graph(
     workflow.add_edge("qa_financial_docs", END)
     workflow.add_edge("hub_decline", END)
 
-    return workflow.compile()
+    compiled = workflow.compile()
+    fincent_log(
+        logger,
+        logging.INFO,
+        "workflow.build.done",
+        component="workflow",
+        edges="hub_route -> qa_financial_docs | hub_decline -> END",
+    )
+    return compiled

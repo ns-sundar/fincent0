@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from typing import Literal
 
@@ -8,6 +9,9 @@ from langchain_core.messages import BaseMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from agents.hub.prompts import ROUTER_SYSTEM_PROMPT
+from config.runtime_logging import fincent_log
+
+logger = logging.getLogger(__name__)
 
 
 class IntentDecision(BaseModel):
@@ -27,6 +31,13 @@ def classify_intent(
 
     The router sees the same user/assistant transcript the spokes see (no RAG).
     """
+    fincent_log(
+        logger,
+        logging.DEBUG,
+        "agent.hub_planner.classify.start",
+        component="agent.hub_planner",
+        context_message_count=len(conversation),
+    )
     structured = router_llm.with_structured_output(IntentDecision)
     messages: list[BaseMessage] = [
         SystemMessage(content=ROUTER_SYSTEM_PROMPT),
@@ -35,4 +46,11 @@ def classify_intent(
     decision = structured.invoke(messages)
     if not isinstance(decision, IntentDecision):
         raise TypeError(f"Expected IntentDecision, got {type(decision)}")
+    fincent_log(
+        logger,
+        logging.DEBUG,
+        "agent.hub_planner.classify.result",
+        component="agent.hub_planner",
+        route=decision.route,
+    )
     return decision

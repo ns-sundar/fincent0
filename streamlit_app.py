@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Sequence
 from typing import cast
@@ -7,10 +8,17 @@ from typing import cast
 import streamlit as st
 from langgraph.graph.state import CompiledStateGraph
 
+from config.runtime_logging import (
+    configure_fincent_logging,
+    fincent_log,
+    fincent_log_exception,
+)
 from config.settings import AppSettings, load_app_settings
 from graph.workflow import build_compiled_graph
 from state.adapters import chat_rows_to_messages, messages_to_chat_rows
 from state.schema import UiChatRow
+
+logger = logging.getLogger(__name__)
 
 SESSION_CHAT_ROWS_KEY = "fincent_ui_chat_rows"
 
@@ -64,6 +72,15 @@ def get_compiled_graph(
     settings: AppSettings,
 ) -> CompiledStateGraph:
     """Compile once per (key, model, settings) tuple; safe for Streamlit reruns."""
+    fincent_log(
+        logger,
+        logging.INFO,
+        "streamlit.graph_compile",
+        component="streamlit",
+        chat_model=model_name,
+        embedding_model=settings.qa_embedding_model,
+        note="cache miss",
+    )
     return build_compiled_graph(api_key, settings, model_name=model_name)
 
 
@@ -76,8 +93,23 @@ def render_chat_history(rows: Sequence[UiChatRow]) -> None:
 def run_graph_turn(graph: CompiledStateGraph, rows: list[UiChatRow]) -> None:
     """Invoke LangGraph and replace the UI transcript from the returned message list."""
     lc_messages = chat_rows_to_messages(rows)
+    fincent_log(
+        logger,
+        logging.INFO,
+        "graph.invoke.start",
+        component="graph",
+        lc_message_count=len(lc_messages),
+    )
     result = graph.invoke({"messages": lc_messages})
     updated = messages_to_chat_rows(result["messages"])
+    fincent_log(
+        logger,
+        logging.INFO,
+        "graph.invoke.done",
+        component="graph",
+        ui_row_count=len(updated),
+        final_route=result.get("route"),
+    )
     rows.clear()
     rows.extend(updated)
 
@@ -91,6 +123,17 @@ def handle_new_prompt(
     rows: list[UiChatRow],
 ) -> None:
     """Append the user turn, run the hub-and-spoke graph, and render this turn inline."""
+    preview = prompt if len(prompt) <= 120 else f"{prompt[:117]}..."
+    fincent_log(
+        logger,
+        logging.INFO,
+        "ingress.chat_input",
+        component="ingress",
+        chat_model=model_name,
+        prior_turns=len(rows),
+        prompt_length=len(prompt),
+        prompt_preview=preview,
+    )
     rows.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
@@ -104,6 +147,13 @@ def handle_new_prompt(
         rows.append({"role": "assistant", "content": assistant_text})
         with st.chat_message("assistant"):
             st.warning(assistant_text)
+        fincent_log(
+            logger,
+            logging.WARNING,
+            "ingress.missing_openai_key",
+            component="ingress",
+            skipped="graph",
+        )
         return
 
     graph = get_compiled_graph(
@@ -116,6 +166,7 @@ def handle_new_prompt(
         try:
             run_graph_turn(graph, rows)
         except Exception as e:
+            fincent_log_exception(logger, "graph.invoke.failed", component="graph")
             st.exception(e)
             return
 
@@ -124,6 +175,7 @@ def handle_new_prompt(
 
 
 def main() -> None:
+    configure_fincent_logging()
     configure_page()
     settings = load_app_settings()
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
